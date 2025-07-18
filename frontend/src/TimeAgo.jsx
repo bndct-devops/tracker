@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 
 const timeAgo = (timestamp) => {
   const now = new Date();
-  const past = new Date(timestamp);
+  // Append 'Z' to the timestamp to ensure it's parsed as UTC
+  const past = new Date(timestamp + 'Z');
   const seconds = Math.floor((now - past) / 1000);
 
   let interval = seconds / 31536000;

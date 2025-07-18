@@ -10,7 +10,7 @@ import datetime
 import os
 
 # Database setup
-DATABASE_URL = "sqlite:///./tracker.db"
+DATABASE_URL = "sqlite:////data/tracker.db"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -26,6 +26,15 @@ Base.metadata.create_all(bind=engine)
 
 # FastAPI app setup
 app = FastAPI()
+
+# CORS for local development and production
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Pydantic Models (for request/response validation)
 class ItemEventCreate(BaseModel):
@@ -56,7 +65,7 @@ def get_db():
 @app.post("/events", response_model=ItemEventResponse)
 def create_item_event(item_event: ItemEventCreate, db: Session = Depends(get_db)):
     """Create a new event for a trackable item."""
-    new_event = ItemEvent(item_name=item_event.item_name, timestamp=datetime.datetime.utcnow())
+    new_event = ItemEvent(item_name=item_event.item_name, timestamp=datetime.datetime.now(datetime.timezone.utc))
     db.add(new_event)
     db.commit()
     db.refresh(new_event)
@@ -65,7 +74,7 @@ def create_item_event(item_event: ItemEventCreate, db: Session = Depends(get_db)
 @app.get("/items/today", response_model=list[TrackableItemSummary])
 def get_items_today(db: Session = Depends(get_db)):
     """Get a summary of all items tracked today."""
-    today = datetime.datetime.utcnow().date()
+    today = datetime.datetime.now(datetime.timezone.utc).date()
     all_events_today = db.query(ItemEvent).filter(func.date(ItemEvent.timestamp) == today).all()
 
     item_data = {}
@@ -105,12 +114,16 @@ def delete_all_item_events(item_name: str, db: Session = Depends(get_db)):
     return
 
 # Serve frontend
-if os.path.exists("static"):
-    app.mount("/assets", StaticFiles(directory="static/assets"), name="static")
+# Determine the path to the static files relative to the current file (main.py)
+# main.py is in /app/backend, static files are in /app/static
+STATIC_FILES_DIR = os.path.join(os.path.dirname(__file__), "..", "static")
+
+if os.path.exists(STATIC_FILES_DIR):
+    app.mount("/assets", StaticFiles(directory=os.path.join(STATIC_FILES_DIR, "assets")), name="static")
 
     @app.get("/{catchall:path}")
     def serve_frontend(catchall: str):
-        return FileResponse("static/index.html")
+        return FileResponse(os.path.join(STATIC_FILES_DIR, "index.html"))
 else:
     # CORS for local development
     app.add_middleware(

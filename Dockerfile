@@ -15,12 +15,16 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Install backend dependencies
-COPY backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY backend/requirements.txt ./backend/
+RUN pip install --no-cache-dir -r backend/requirements.txt
 
 # Copy backend code and the built frontend
-COPY backend/ .
+COPY backend/ ./backend/
 COPY --from=build /app/frontend/dist ./static
+
+RUN mkdir /data
+
+WORKDIR /app/backend
 
 # Expose the port the app runs on
 EXPOSE 8000

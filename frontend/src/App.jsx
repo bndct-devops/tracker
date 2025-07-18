@@ -14,8 +14,9 @@ function App() {
   }, []);
 
   const fetchItems = async () => {
-    const response = await fetch('http://localhost:8000/items/today');
+    const response = await fetch('/items/today');
     const data = await response.json();
+    console.log('API Response:', data); // Log the raw data
     setItems(data);
   };
 
@@ -26,7 +27,7 @@ function App() {
   const handleAddItem = async (e) => {
     e.preventDefault();
     if (!newItemName.trim()) return;
-    await fetch('http://localhost:8000/events', {
+    await fetch('/events', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ item_name: newItemName }),
@@ -36,7 +37,7 @@ function App() {
   };
 
   const handleIncrement = async (itemName) => {
-    await fetch('http://localhost:8000/events', {
+    await fetch('/events', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ item_name: itemName }),
@@ -49,21 +50,21 @@ function App() {
   };
 
   const handleDecrement = async (itemName) => {
-    await fetch(`http://localhost:8000/items/${itemName}/latest`, {
+    await fetch(`/items/${itemName}/latest`, {
       method: 'DELETE',
     });
     fetchItems();
   };
 
   const handleDeleteItem = async (itemName) => {
-    await fetch(`http://localhost:8000/items/${itemName}`, {
+    await fetch(`/items/${itemName}`, {
       method: 'DELETE',
     });
     fetchItems();
   };
 
   const handleExport = async () => {
-    const response = await fetch('http://localhost:8000/events/all');
+    const response = await fetch('/events/all');
     const data = await response.json();
 
     let csvContent = "data:text/csv;charset=utf-8,Item,Timestamp\n";
